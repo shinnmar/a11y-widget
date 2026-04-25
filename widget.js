@@ -44,16 +44,32 @@ toggle.addEventListener("click", () => {
 });
 
 // ── 4. TAMAÑO DE FUENTE ──
-let fontSize = 100;
+let fontScale = 1;
+const TEXT_SELECTORS =
+  "p, h1, h2, h3, h4, h5, h6, a, span, li, label, button, td, th";
+
+function applyFontScale() {
+  document.querySelectorAll(TEXT_SELECTORS).forEach((el) => {
+    // No tocar el widget de accesibilidad
+    if (el.closest("#a11y-widget")) return;
+
+    // Guardar el tamaño base la primera vez
+    if (!el.dataset.baseFontSize) {
+      el.dataset.baseFontSize = parseFloat(getComputedStyle(el).fontSize);
+    }
+
+    el.style.fontSize = parseFloat(el.dataset.baseFontSize) * fontScale + "px";
+  });
+}
 
 document.getElementById("btn-font-up").addEventListener("click", () => {
-  fontSize = Math.min(fontSize + 10, 150);
-  document.body.style.fontSize = fontSize + "%";
+  fontScale = Math.min(fontScale + 0.1, 1.5);
+  applyFontScale();
 });
 
 document.getElementById("btn-font-down").addEventListener("click", () => {
-  fontSize = Math.max(fontSize - 10, 80);
-  document.body.style.fontSize = fontSize + "%";
+  fontScale = Math.max(fontScale - 0.1, 0.8);
+  applyFontScale();
 });
 
 // ── 5. ALTO CONTRASTE ──
@@ -98,14 +114,17 @@ async function analyzeWithAI() {
 
   const prompt = `
     Eres un experto en accesibilidad web (WCAG 2.1).
-    Analiza esta información y responde en español.
-    Texto visible: "${text}"
-    Imágenes sin alt text: ${imgsSinAlt.length}
-    Botones sin etiqueta: ${btnsSinLabel}
-    Dame exactamente 3 problemas encontrados con este formato:
-    ⚠️ [problema corto]
-    → Fix: [solución en 1 línea]
-    Sin introducciones.
+  Analiza esta información y responde en español.
+  Texto visible: "${text}"
+  Imágenes sin alt text: ${imgsSinAlt.length}
+  Botones sin etiqueta: ${btnsSinLabel}
+  
+  Lista SOLO los problemas reales encontrados (máximo 5, mínimo 1).
+  Si no hay problemas, di "✅ Sin problemas críticos detectados."
+  Usa exactamente este formato por cada problema:
+  ⚠️ [problema corto]
+  → Fix: [solución en 1 línea]
+  Sin introducciones ni conclusiones.
   `;
 
   try {

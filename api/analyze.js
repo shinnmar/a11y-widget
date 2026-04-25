@@ -1,3 +1,12 @@
+import { readFileSync } from "fs";
+import { resolve } from "path";
+
+const envFile = readFileSync(resolve(process.cwd(), ".env.local"), "utf8");
+envFile.split("\n").forEach((line) => {
+  const [key, val] = line.split("=");
+  if (key && val) process.env[key.trim()] = val.trim();
+});
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -7,6 +16,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST")
     return res.status(405).json({ error: "Method not allowed" });
 
+  console.log("KEY LOADED:", process.env.A11Y_API_KEY ? "YES" : "NO");
   try {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: "Falta el prompt" });
@@ -17,7 +27,7 @@ export default async function handler(req, res) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          Authorization: `Bearer ${process.env.A11Y_API_KEY}`,
         },
         body: JSON.stringify({
           model: "llama-3.1-8b-instant",
