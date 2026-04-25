@@ -92,7 +92,7 @@ async function analyzeWithAI() {
   btn.disabled = true;
   btn.textContent = "⏳ Analizando...";
   results.classList.add("visible");
-  results.innerHTML = "Gemini está revisando tu página...";
+  results.innerHTML = "La IA está revisando tu página...";
 
   const { text, imgsSinAlt, btnsSinLabel } = getPageContent();
 
@@ -119,7 +119,7 @@ async function analyzeWithAI() {
     results.innerHTML = data.answer.replace(/\n/g, "<br>");
     btn.textContent = "✅ Análisis listo";
   } catch (error) {
-    results.innerHTML = "❌ Error al conectar con Gemini.";
+    results.innerHTML = "❌ Error al conectar.";
     btn.textContent = "🔍 Analizar página con IA";
     btn.disabled = false;
   }
