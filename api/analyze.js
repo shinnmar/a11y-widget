@@ -1,31 +1,43 @@
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Method not allowed" });
 
-  const { prompt } = req.body;
-  console.log("KEY:", process.env.GROQ_API_KEY);
+  try {
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: "Falta el prompt" });
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-      }),
-    },
-  );
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          max_tokens: 500,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      },
+    );
 
-  const data = await response.json();
+    const data = await response.json();
 
-  // Si Gemini devuelve error, lo mostramos
-  if (!data.candidates) {
-    return res.status(500).json({ error: data });
+    if (!data.choices || !data.choices[0]) {
+      console.error("Groq error:", JSON.stringify(data));
+      return res.status(500).json({ error: "Sin respuesta", detail: data });
+    }
+
+    const answer = data.choices[0].message.content;
+    res.status(200).json({ answer });
+  } catch (err) {
+    console.error("Handler error:", err);
+    res.status(500).json({ error: "Error interno", detail: err.message });
   }
-
-  const answer = data.candidates[0].content.parts[0].text;
-  res.status(200).json({ answer });
 }
